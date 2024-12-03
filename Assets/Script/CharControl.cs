@@ -29,7 +29,7 @@ public class CharControl : MonoBehaviour
         float moveVertical = Input.GetAxis("Vertical");
         
         Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
-        if(movement.x+movement.z>0.1f && !walkeffect.isPlaying) walkeffect.Play(); else walkeffect.Pause();        
+        if(Mathf.Abs(movement.x+movement.z)>0.1f && !walkeffect.isPlaying) walkeffect.Play(); else walkeffect.Pause();        
         transform.Translate(movement * Time.deltaTime * moveSpeed);
 
         if (Mathf.Abs(moveVertical)+ Mathf.Abs(moveHorizontal) > 0.1f)

@@ -7,13 +7,13 @@ public class EnemyControl : MonoBehaviour
 {
     // Start is called before the first frame update
     public Transform target;
-    public float ViewDistance=7f;
-    public float MeleeDistance = 2f;
+    public float ViewDistance = 3f;
+    public float MeleeDistance = 1f;
     public float WalkSpeed = 1f;
-    public int InitHP;
-    public int InitAP;
+    public int InitHP=3;
+    public int InitAP=1;
     NavMeshAgent agent;
-    private Animator ta;
+    private Animator animator;
     private float CurrHP;
     private float CurrAP;
     bool touch = false;
@@ -21,31 +21,33 @@ public class EnemyControl : MonoBehaviour
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        ta = GetComponent<Animator>();
+        animator = GetComponent<Animator>();
         agent.stoppingDistance = MeleeDistance;
         agent.speed = WalkSpeed;
-        CurrHP=InitHP;
+        CurrHP = InitHP;
         CurrAP = InitAP;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (target != null && CurrHP>0)
+        if (target != null && CurrHP > 0)
         {
-            if (touch)
+            if (touch && animator.GetCurrentAnimatorStateInfo(0).IsName("attack1")) //target.gameObject.GetComponent<Gamekit3D.PlayerController>().m_InAttack
             {
                 agent.isStopped = true;
-                ta.SetBool("walk", false);
+                animator.SetBool("walk", false);
+                touch = false;
                 CurrHP--;
                 Debug.Log(target.name + " Hit " + gameObject.name + ", left " + CurrHP);
                 if (CurrHP <= 0)
                 {
-                    ta.SetTrigger("die");
+                    target = null;
+                    animator.SetTrigger("die");
                     //GlobalSet.enemycount--;
                 }
                 else
-                    ta.SetTrigger("hit");
+                    animator.SetTrigger("hit");
             }
             else
             {
@@ -55,21 +57,21 @@ public class EnemyControl : MonoBehaviour
                     if (distance <= MeleeDistance)
                     {
                         agent.isStopped = true;
-                        ta.SetBool("walk", false);
+                        animator.SetBool("walk", false);
                         facetarget();
-                        ta.SetTrigger("attack1");
+                        animator.SetTrigger("attack1");
                     }
                     else
                     {
                         agent.isStopped = false;
-                        ta.SetBool("walk", true);
+                        animator.SetBool("walk", true);
                         agent.SetDestination(target.position);
                     }
                 }
                 else
                 {
-                    agent.isStopped=true;                    
-                    ta.SetBool("walk", false);
+                    agent.isStopped = true;
+                    animator.SetBool("walk", false);
                 }
             }
         }
@@ -92,12 +94,12 @@ public class EnemyControl : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.name == target.name) touch = true;
-        Debug.Log("Collider Enter "+other.name);
+        if (other.name == "attack1") touch = true;
+        Debug.Log("Collider Enter " + other.name);
     }
     void OnTriggerExit(Collider other)
     {
-        if (other.name == target.name) touch = false;
-        Debug.Log("Collider Enter "+other.name);
+        if (other.name == "attack1") touch = false;
+        Debug.Log("Collider Enter " + other.name);
     }
 }
