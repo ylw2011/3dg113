@@ -1,105 +1,65 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class EnemyControl : MonoBehaviour
 {
-    // Start is called before the first frame update
-    public Transform target;
-    public float ViewDistance = 3f;
-    public float MeleeDistance = 1f;
-    public float WalkSpeed = 1f;
-    public int InitHP=3;
-    public int InitAP=1;
-    NavMeshAgent agent;
-    private Animator animator;
-    private float CurrHP;
-    private float CurrAP;
-    bool touch = false;
+    public Transform player; // 玩家?象
+    public float viewDistance = 10.0f; // ?野范??定?10?位
+    public float meleeDistance = 2.0f; // 攻?距离?2?位
+    public float walkSpeed = 3.5f; // ??速度
+    private NavMeshAgent agent; // AI?航代理
+
+    private Animator animator; // ??控制器
 
     void Start()
     {
+        // ?取?航代理和??控制器
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        agent.stoppingDistance = MeleeDistance;
-        agent.speed = WalkSpeed;
-        CurrHP = InitHP;
-        CurrAP = InitAP;
+        agent.speed = walkSpeed;
+
+        if (agent == null)
+            Debug.LogError("No NavMeshAgent attached to GameObject");
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (target != null && CurrHP > 0)
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+
+        // ?玩家在?野范??，AI?朝向玩家移?
+        if (distanceToPlayer <= viewDistance && distanceToPlayer > meleeDistance)
         {
-            if (touch && animator.GetCurrentAnimatorStateInfo(0).IsName("attack1")) //target.gameObject.GetComponent<Gamekit3D.PlayerController>().m_InAttack
-            {
-                agent.isStopped = true;
-                animator.SetBool("walk", false);
-                touch = false;
-                CurrHP--;
-                Debug.Log(target.name + " Hit " + gameObject.name + ", left " + CurrHP);
-                if (CurrHP <= 0)
-                {
-                    target = null;
-                    animator.SetTrigger("die");
-                    //GlobalSet.enemycount--;
-                }
-                else
-                    animator.SetTrigger("hit");
-            }
-            else
-            {
-                float distance = Vector3.Distance(target.position, transform.position);
-                if (distance <= ViewDistance)
-                {
-                    if (distance <= MeleeDistance)
-                    {
-                        agent.isStopped = true;
-                        animator.SetBool("walk", false);
-                        facetarget();
-                        animator.SetTrigger("attack1");
-                    }
-                    else
-                    {
-                        agent.isStopped = false;
-                        animator.SetBool("walk", true);
-                        agent.SetDestination(target.position);
-                    }
-                }
-                else
-                {
-                    agent.isStopped = true;
-                    animator.SetBool("walk", false);
-                }
-            }
+            agent.SetDestination(player.position);
+            animator.SetBool("walk", true);
+        }
+        else if (distanceToPlayer <= meleeDistance)
+        {
+            animator.SetBool("walk", false);
+            animator.SetTrigger("attack1");
+            agent.SetDestination(transform.position); // Stay in place while attacking
+        }
+        else
+        {
+            animator.SetBool("walk", false);
         }
     }
 
-    void facetarget()
-    {
-        Vector3 dire = (target.position - transform.position).normalized;
-        Quaternion lookr = Quaternion.LookRotation(new Vector3(dire.x, 0, dire.z));
-        transform.rotation = Quaternion.Slerp(transform.rotation, lookr, Time.deltaTime * 3f);
-    }
-
-    private void OnDrawGizmos()
+    void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(transform.position, ViewDistance);
+        Gizmos.DrawWireSphere(transform.position, viewDistance);
+
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, MeleeDistance);
+        Gizmos.DrawWireSphere(transform.position, meleeDistance);
     }
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.name == "attack1") touch = true;
-        Debug.Log("Collider Enter " + other.name);
-    }
-    void OnTriggerExit(Collider other)
-    {
-        if (other.name == "attack1") touch = false;
-        Debug.Log("Collider Enter " + other.name);
+        if (other.CompareTag("Player")) // 如果碰到玩家
+        {
+            GlobalSet.life--;
+            //player.GetComponent<PlayerHealth>().TakeDamage(1); // ?玩家的HP造成1??害
+            player.GetComponent<Animator>().SetTrigger("hit"); // 触?玩家的"hit"??
+        }
     }
 }
